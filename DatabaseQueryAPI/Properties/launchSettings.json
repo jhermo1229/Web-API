@@ -33,9 +33,11 @@
       "commandName": "IISExpress",
       "launchBrowser": true,
       "launchUrl": "swagger",
+      "applicationUrl": "http://192.168.2.128:5233", // Ensure it's using the correct IP
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     }
+
   }
 }
