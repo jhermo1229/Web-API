@@ -10,62 +10,50 @@ namespace DatabaseQueryAPI.Services
 {
     public class DatabaseService
     {
-        // Your connection string
         private readonly string _connectionString = "Server=144.217.253.105;Database=sanigear_db;User ID=sanigear_office;Password=3]E-pMwvwQ}C;";
 
-        public async Task<List<Dictionary<string, object>>> ExecuteQueryAsync(string sqlQuery, Dictionary<string, object> parameters)
+        public async Task<List<Dictionary<string, object>>> ExecuteQueryAsync(string sqlQuery, Dictionary<string, object> parameters, string userIdentifier = "Unknown")
         {
             var results = new List<Dictionary<string, object>>();
-            Debug.WriteLine($"Database Service: {sqlQuery}");
+
+            // Log the user who is making the request and the query being executed
+            LogQueryExecution(sqlQuery, parameters, userIdentifier);
 
             try
             {
-                // Establish the connection to the database
                 using (var connection = new MySqlConnection(_connectionString))
                 {
                     await connection.OpenAsync();
                     using (var command = new MySqlCommand(sqlQuery, connection))
                     {
-                        // Add parameters if they exist, ensuring correct types
+                        // Add parameters to the command if they exist
                         if (parameters != null)
                         {
                             foreach (var param in parameters)
                             {
-                                // Ensure that parameter is converted to an appropriate type if needed
                                 var paramValue = param.Value;
 
-                                // Check if the parameter is a JsonElement
                                 if (paramValue is JsonElement jsonElement)
                                 {
-                                    // If the JsonElement is an object or array, you need to handle it
-                                    // For example, convert it to a string (you can modify this based on your needs)
-                                    paramValue = jsonElement.ToString(); // Convert JSON to string
-                                    command.Parameters.AddWithValue(param.Key, paramValue);
+                                    paramValue = jsonElement.ToString();
                                 }
-                                // Convert DateTime to MySQL-friendly string format
                                 else if (paramValue is DateTime dateTimeValue)
                                 {
-                                    command.Parameters.AddWithValue(param.Key, dateTimeValue.ToString("yyyy-MM-dd HH:mm:ss"));
+                                    paramValue = dateTimeValue.ToString("yyyy-MM-dd HH:mm:ss");
                                 }
-                                // Convert boolean to 0/1 for MySQL compatibility
                                 else if (paramValue is bool boolValue)
                                 {
-                                    command.Parameters.AddWithValue(param.Key, boolValue ? 1 : 0);
+                                    paramValue = boolValue ? 1 : 0;
                                 }
-                                // Convert null to DBNull for database compatibility
                                 else if (paramValue == null)
                                 {
-                                    command.Parameters.AddWithValue(param.Key, DBNull.Value);
+                                    paramValue = DBNull.Value;
                                 }
-                                else
-                                {
-                                    // Add the parameter normally if it's already in a supported type
-                                    command.Parameters.AddWithValue(param.Key, paramValue);
-                                }
+
+                                command.Parameters.AddWithValue(param.Key, paramValue);
                             }
                         }
 
-                        // Execute the query and read the results
                         using (var reader = await command.ExecuteReaderAsync())
                         {
                             while (await reader.ReadAsync())
@@ -76,21 +64,52 @@ namespace DatabaseQueryAPI.Services
                                     row[reader.GetName(i)] = reader.GetValue(i);
                                 }
 
-                                Debug.WriteLine($"Received row: {string.Join(", ", row)}");  // Log the row contents for debugging
                                 results.Add(row);
                             }
                         }
+
+                        // Log the results after the query is executed
+                        LogQueryResults(results);
                     }
                 }
             }
             catch (Exception ex)
             {
-                // Log the error and throw it again to ensure proper error reporting
+                // Log the error and throw it again
                 Debug.WriteLine($"Error executing query: {ex.Message}");
                 throw new InvalidOperationException("An error occurred while executing the query.", ex);
             }
 
             return results;
+        }
+
+        // Method to log query execution details
+        private void LogQueryExecution(string sqlQuery, Dictionary<string, object> parameters, string userIdentifier)
+        {
+            var logMessage = $"User '{userIdentifier}' executed the following query: {sqlQuery}";
+            if (parameters != null && parameters.Count > 0)
+            {
+                logMessage += " With parameters: " + string.Join(", ", parameters.Select(p => $"{p.Key}={p.Value}"));
+            }
+            Debug.WriteLine(logMessage);
+        }
+
+        // Method to log the query result details
+        private void LogQueryResults(List<Dictionary<string, object>> results)
+        {
+            if (results != null && results.Count > 0)
+            {
+                Debug.WriteLine($"Query returned {results.Count} rows.");
+                foreach (var row in results)
+                {
+                    var rowData = string.Join(", ", row.Select(kvp => $"{kvp.Key}: {kvp.Value}"));
+                    Debug.WriteLine($"Result Row: {rowData}");
+                }
+            }
+            else
+            {
+                Debug.WriteLine("Query returned no results.");
+            }
         }
     }
 }

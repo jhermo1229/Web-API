@@ -9,8 +9,8 @@ builder.Services.AddScoped<DatabaseService>();  // Register DatabaseService for 
 var app = builder.Build();
 
 // Tell the application to listen on a specific IP (e.g., 192.168.2.128) and port (e.g., 5233)
-app.Urls.Add("http://192.168.2.128:5233");
-app.Urls.Add("https://192.168.2.128:7136"); // For HTTPS if needed
+app.Urls.Add("http://192.168.2.127:5233");
+app.Urls.Add("https://192.168.2.127:7136"); // For HTTPS if needed
 
 // Configure middleware
 app.UseAuthorization();
