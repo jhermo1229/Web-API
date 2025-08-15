@@ -1,8 +1,9 @@
 ﻿using DatabaseQueryAPI.Models;
 using MySqlConnector;
+using Microsoft.Extensions.Logging;  // Add this namespace for ILogger
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
+using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -11,13 +12,20 @@ namespace DatabaseQueryAPI.Services
     public class DatabaseService
     {
         private readonly string _connectionString = "Server=144.217.253.105;Database=sanigear_db;User ID=sanigear_office;Password=3]E-pMwvwQ}C;";
+        private readonly ILogger<DatabaseService> _logger;  // Declare logger
 
-        public async Task<List<Dictionary<string, object>>> ExecuteQueryAsync(string sqlQuery, Dictionary<string, object> parameters, string userIdentifier = "Unknown")
+        // Constructor to inject the logger
+        public DatabaseService(ILogger<DatabaseService> logger)
+        {
+            _logger = logger;
+        }
+
+        public async Task<List<Dictionary<string, object>>> ExecuteQueryAsync(string sqlQuery, Dictionary<string, object> parameters, string userIdentifier = "Unknown", string clientIp = "Unknown")
         {
             var results = new List<Dictionary<string, object>>();
 
-            // Log the user who is making the request and the query being executed
-            LogQueryExecution(sqlQuery, parameters, userIdentifier);
+            // Log the user, IP address, and the query being executed
+            LogQueryExecution(sqlQuery, parameters, userIdentifier, clientIp);
 
             try
             {
@@ -76,7 +84,7 @@ namespace DatabaseQueryAPI.Services
             catch (Exception ex)
             {
                 // Log the error and throw it again
-                Debug.WriteLine($"Error executing query: {ex.Message}");
+                _logger.LogError(ex, "Error executing query: {Message}", ex.Message);  // LogError for exceptions
                 throw new InvalidOperationException("An error occurred while executing the query.", ex);
             }
 
@@ -84,14 +92,16 @@ namespace DatabaseQueryAPI.Services
         }
 
         // Method to log query execution details
-        private void LogQueryExecution(string sqlQuery, Dictionary<string, object> parameters, string userIdentifier)
+        private void LogQueryExecution(string sqlQuery, Dictionary<string, object> parameters, string userIdentifier, string clientIp)
         {
-            var logMessage = $"User '{userIdentifier}' executed the following query: {sqlQuery}";
+            var logMessage = $"User '{userIdentifier}' from IP '{clientIp}' executed the following query: {sqlQuery}";
             if (parameters != null && parameters.Count > 0)
             {
                 logMessage += " With parameters: " + string.Join(", ", parameters.Select(p => $"{p.Key}={p.Value}"));
             }
-            Debug.WriteLine(logMessage);
+
+            // Log as Information
+            _logger.LogInformation(logMessage);  // Use LogInformation for normal logs
         }
 
         // Method to log the query result details
@@ -99,16 +109,16 @@ namespace DatabaseQueryAPI.Services
         {
             if (results != null && results.Count > 0)
             {
-                Debug.WriteLine($"Query returned {results.Count} rows.");
+                _logger.LogInformation($"Query returned {results.Count} rows.");
                 foreach (var row in results)
                 {
                     var rowData = string.Join(", ", row.Select(kvp => $"{kvp.Key}: {kvp.Value}"));
-                    Debug.WriteLine($"Result Row: {rowData}");
+                    _logger.LogInformation($"Result Row: {rowData}");
                 }
             }
             else
             {
-                Debug.WriteLine("Query returned no results.");
+                _logger.LogInformation("Query returned no results.");
             }
         }
     }
