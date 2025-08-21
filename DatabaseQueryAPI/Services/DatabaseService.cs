@@ -1,6 +1,7 @@
 ﻿using DatabaseQueryAPI.Models;
 using MySqlConnector;
-using Microsoft.Extensions.Logging;  // Add this namespace for ILogger
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;            // <-- add
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,20 +12,30 @@ namespace DatabaseQueryAPI.Services
 {
     public class DatabaseService
     {
-        private readonly string _connectionString = "Server=144.217.253.105;Database=sanigear_db;User ID=sanigear_office;Password=3]E-pMwvwQ}C;";
-        private readonly ILogger<DatabaseService> _logger;  // Declare logger
+        private readonly string _connectionString;
+        private readonly ILogger<DatabaseService> _logger;
+        private readonly IReadOnlyDictionary<string, string> _ipMap;
 
-        // Constructor to inject the logger
-        public DatabaseService(ILogger<DatabaseService> logger)
+        // Inject IConfiguration so we can read ConnectionStrings + IpMappings
+        public DatabaseService(IConfiguration config, ILogger<DatabaseService> logger)
         {
             _logger = logger;
+
+            // Prefer config; if missing, fall back to your existing literal
+            _connectionString = config.GetConnectionString("MainDb");
+
+            _ipMap = config.GetSection("IpMappings").Get<Dictionary<string, string>>() ?? new Dictionary<string, string>();
         }
 
-        public async Task<List<Dictionary<string, object>>> ExecuteQueryAsync(string sqlQuery, Dictionary<string, object> parameters, string userIdentifier = "Unknown", string clientIp = "Unknown")
+        public async Task<List<Dictionary<string, object>>> ExecuteQueryAsync(
+            string sqlQuery,
+            Dictionary<string, object> parameters,
+            string userIdentifier = "Unknown",
+            string clientIp = "Unknown")
         {
             var results = new List<Dictionary<string, object>>();
 
-            // Log the user, IP address, and the query being executed
+            // Log the user, labeled IP, and the query being executed
             LogQueryExecution(sqlQuery, parameters, userIdentifier, clientIp);
 
             try
@@ -47,6 +58,7 @@ namespace DatabaseQueryAPI.Services
                                 }
                                 else if (paramValue is DateTime dateTimeValue)
                                 {
+                                    // Keep your existing formatting
                                     paramValue = dateTimeValue.ToString("yyyy-MM-dd HH:mm:ss");
                                 }
                                 else if (paramValue is bool boolValue)
@@ -83,8 +95,7 @@ namespace DatabaseQueryAPI.Services
             }
             catch (Exception ex)
             {
-                // Log the error and throw it again
-                _logger.LogError(ex, "Error executing query: {Message}", ex.Message);  // LogError for exceptions
+                _logger.LogError(ex, "Error executing query: {Message}", ex.Message);
                 throw new InvalidOperationException("An error occurred while executing the query.", ex);
             }
 
@@ -92,16 +103,36 @@ namespace DatabaseQueryAPI.Services
         }
 
         // Method to log query execution details
-        private void LogQueryExecution(string sqlQuery, Dictionary<string, object> parameters, string userIdentifier, string clientIp)
+        private void LogQueryExecution(
+            string sqlQuery,
+            Dictionary<string, object> parameters,
+            string userIdentifier,
+            string clientIpRaw)
         {
-            var logMessage = $"User '{userIdentifier}' from IP '{clientIp}' executed the following query: {sqlQuery}";
+            // Enrich IP with friendly name if present
+            string clientIpLabeled = LabelIp(clientIpRaw);
+
+            // Timestamps: UTC and Ontario local
+            DateTimeOffset utcNow = DateTimeOffset.UtcNow;
+            TimeZoneInfo tz = TimeZoneInfo.FindSystemTimeZoneById("America/Toronto");
+            DateTimeOffset localNow = TimeZoneInfo.ConvertTime(utcNow, tz);
+
+            var logMessage =
+                $"User '{userIdentifier}' from IP '{clientIpLabeled}' " +
+                $"at UTC {utcNow:O} (Ontario {localNow:yyyy-MM-dd HH:mm:ss zzz}) executed query: {sqlQuery}";
+
             if (parameters != null && parameters.Count > 0)
             {
-                logMessage += " With parameters: " + string.Join(", ", parameters.Select(p => $"{p.Key}={p.Value}"));
+                logMessage += " | Params: " + string.Join(", ", parameters.Select(p => $"{p.Key}={p.Value}"));
             }
 
-            // Log as Information
-            _logger.LogInformation(logMessage);  // Use LogInformation for normal logs
+            _logger.LogInformation(logMessage);
+        }
+
+        private string LabelIp(string ip)
+        {
+            if (string.IsNullOrWhiteSpace(ip)) return "Unknown";
+            return _ipMap.TryGetValue(ip, out var name) ? $"{ip} ({name})" : ip;
         }
 
         // Method to log the query result details

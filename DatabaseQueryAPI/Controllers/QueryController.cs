@@ -99,15 +99,19 @@ ORDER BY
         }
 
 
+
         //Get shell only for active batches
         [HttpGet("GetGearReport")]
         public async Task<IActionResult> GetGearReport(
-    [FromQuery] int plantLocationId = 1,
-    [FromQuery] string receiveStatus = "ACTIVE",
-    [FromQuery] int shellOnly = 1)
+    [FromQuery] string receiveStatus = "ACTIVE")
         {
             var sql = @"
 SELECT
+	CASE  b.plant_locationid_f
+    WHEN 1 THEN 'KITCHENER'
+    WHEN 2 THEN 'GATINEAU'
+    ELSE 'UNKNOWN'
+  END AS PLANT,
     CONCAT(ff.firstname, ' ', ff.lastname) AS FIREFIGHTER_NAME,
     c.customer AS CUSTOMER,
     b.customer_batch_num AS BATCH_NUMBER,
@@ -123,7 +127,11 @@ SELECT
     i.inseam AS INSEAM,
     i.chest AS CHEST,
     i.sleeve AS SLEEVE,
-    i.length AS LENGTH
+    i.length AS LENGTH,
+  		  CASE wi.ShellOnly
+    WHEN 1 THEN 'Shell only'
+	 ELSE 'Liner Only'
+  END AS SHELL_LINER
 FROM workorder w
 INNER JOIN firefighter ff ON w.firefighterid_f = ff.firefighterid_p
 INNER JOIN workorder_item wi ON wi.workorderid_f = w.workorderid_p
@@ -133,16 +141,13 @@ INNER JOIN item i ON i.itemid_p = wi.itemid_f
 INNER JOIN manufacturer m ON m.manufacturerid_p = i.manufacturerid_f
 LEFT JOIN customer_station cs ON cs.customer_stationid_p = w.customer_stationid_f
 WHERE
-    b.plant_locationid_f = @PlantLocationId
-    AND b.receive_status = @ReceiveStatus
-    AND wi.ShellOnly = @ShellOnly
-ORDER BY CUSTOMER;";
+b.receive_status = @ReceiveStatus
+    AND (wi.ShellOnly = 1 OR wi.LinerOnly = 1)
+ORDER BY PLANT, CUSTOMER;";
 
             var parameters = new Dictionary<string, object>
             {
-                ["PlantLocationId"] = plantLocationId,
                 ["ReceiveStatus"] = receiveStatus,
-                ["ShellOnly"] = shellOnly
             };
 
             // Get the client's IP address
