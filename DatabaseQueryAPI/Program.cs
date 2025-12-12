@@ -1,11 +1,20 @@
+using DatabaseQueryAPI.Model;
 using DatabaseQueryAPI.Services;
+using DatabaseQueryAPI.Services.Scheduling;
 using Microsoft.Extensions.Logging;  // Add the necessary namespace
+
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Register services in the DI container
 builder.Services.AddControllers();
 builder.Services.AddScoped<DatabaseService>();  // Register DatabaseService for injection
+builder.Services.AddScoped<EmailService>();
+builder.Services.AddSingleton<ExcelReportService>();
+builder.Services.AddScoped<GearReportService>();
+builder.Services.AddHostedService<ReportSchedulerService>();
+builder.Services.Configure<List<ReportJobOptions>>(builder.Configuration.GetSection("ReportJobs"));
+builder.Services.AddScoped<ReportJobRunner>();
 
 // Add logging services
 builder.Services.AddLogging(config =>
@@ -20,9 +29,8 @@ builder.Services.AddLogging(config =>
 
 var app = builder.Build();
 
-// Tell the application to listen on specific IPs and ports
-app.Urls.Add("http://192.168.2.127:5233");
-app.Urls.Add("https://192.168.2.127:7136"); // For HTTPS if needed
+app.Urls.Clear();
+app.Urls.Add("http://0.0.0.0:5233");
 
 // Configure middleware
 app.UseAuthorization();

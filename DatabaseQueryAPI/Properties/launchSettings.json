@@ -4,7 +4,7 @@
     "windowsAuthentication": false,
     "anonymousAuthentication": true,
     "iisExpress": {
-      "applicationUrl": "http://localhost:60682",
+      "applicationUrl": "http://localhost:60682", //local is for testing purposes only. Change back to the correct one.
       "sslPort": 44345
     }
   },
@@ -14,7 +14,7 @@
       "dotnetRunMessages": true,
       "launchBrowser": true,
       "launchUrl": "swagger",
-      "applicationUrl": "http://192.168.2.128:5233", // Change to your local network IP address
+      "applicationUrl": "http://0.0.0.0:5233",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
@@ -24,7 +24,7 @@
       "dotnetRunMessages": true,
       "launchBrowser": true,
       "launchUrl": "swagger",
-      "applicationUrl": "https://192.168.2.128:7136;http://192.168.2.128:5233", // Change to your local network IP address
+      "applicationUrl": "https://0.0.0.0:7136;http://0.0.0.0:5233",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
@@ -33,11 +33,9 @@
       "commandName": "IISExpress",
       "launchBrowser": true,
       "launchUrl": "swagger",
-      "applicationUrl": "http://192.168.2.128:5233", // Ensure it's using the correct IP
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     }
-
   }
 }

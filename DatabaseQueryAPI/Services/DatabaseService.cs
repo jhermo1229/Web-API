@@ -20,9 +20,7 @@ namespace DatabaseQueryAPI.Services
         public DatabaseService(IConfiguration config, ILogger<DatabaseService> logger)
         {
             _logger = logger;
-
-            // Prefer config; if missing, fall back to your existing literal
-            _connectionString = config.GetConnectionString("MainDb");
+          //  add connection string here _connectionString = config.GetConnectionString("MainDb") ?? "Server=144.217.253.105;Database=sanigear_db;User ID=;Password=;";
 
             _ipMap = config.GetSection("IpMappings").Get<Dictionary<string, string>>() ?? new Dictionary<string, string>();
         }
