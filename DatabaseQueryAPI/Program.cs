@@ -15,6 +15,12 @@ builder.Services.AddScoped<GearReportService>();
 builder.Services.AddHostedService<ReportSchedulerService>();
 builder.Services.Configure<List<ReportJobOptions>>(builder.Configuration.GetSection("ReportJobs"));
 builder.Services.AddScoped<ReportJobRunner>();
+builder.Services.AddScoped<WorkorderCountReportService>();
+builder.Services.AddScoped<QaDailyReportService>();
+builder.Services.AddScoped<ExpiryReportService>();
+builder.Services.AddScoped<DailyItemRepeatService>();
+builder.Services.AddSingleton<SchedulerStatusService>();
+
 
 // Add logging services
 builder.Services.AddLogging(config =>

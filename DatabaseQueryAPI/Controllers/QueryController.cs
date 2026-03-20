@@ -106,9 +106,9 @@ ORDER BY
             try
             {
                 var gearReport = HttpContext.RequestServices.GetRequiredService<GearReportService>();
-
+                IEnumerable<string> toEmails = ["jeff@sanigear.ca"];
                 // send email (since your current method sends email)
-                await gearReport.SendEmailAsync(plantId, receiveStatus, "jeff@sanigear.ca");
+                await gearReport.SendEmailAsync(plantId, receiveStatus, toEmails);
 
                 return Ok(new { message = "Email sent.", plantId });
             }

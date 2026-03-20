@@ -14,7 +14,7 @@ namespace DatabaseQueryAPI.Services
         }
 
         public async Task SendEmailWithAttachmentAsync(
-            string toEmail,
+            IEnumerable<string> toEmails,
             string subject,
             string body,
             byte[] attachmentBytes,
@@ -41,7 +41,19 @@ namespace DatabaseQueryAPI.Services
                 IsBodyHtml = false
             };
 
-            mail.To.Add(toEmail);
+            // Add recipients safely
+            var cleaned = (toEmails ?? Enumerable.Empty<string>())
+                .SelectMany(x => (x ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries)) // supports "a,b" too
+                .Select(x => x.Trim())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (cleaned.Count == 0)
+                throw new ArgumentException("No valid recipient emails were provided.", nameof(toEmails));
+
+            foreach (var email in cleaned)
+                mail.To.Add(email);
 
             if (attachmentBytes != null && attachmentBytes.Length > 0)
             {
