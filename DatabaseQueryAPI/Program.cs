@@ -15,6 +15,9 @@ builder.Services.AddScoped<GearReportService>();
 builder.Services.AddHostedService<ReportSchedulerService>();
 builder.Services.Configure<List<ReportJobOptions>>(builder.Configuration.GetSection("ReportJobs"));
 builder.Services.AddScoped<ReportJobRunner>();
+builder.Services.AddSingleton<SchedulerDbInitializer>();
+builder.Services.AddSingleton<SchedulerJobStore>();
+builder.Services.AddSingleton<SchedulerStatusService>();
 
 // Add logging services
 builder.Services.AddLogging(config =>
@@ -28,6 +31,12 @@ builder.Services.AddLogging(config =>
 });
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var dbInitializer = scope.ServiceProvider.GetRequiredService<SchedulerDbInitializer>();
+    dbInitializer.Initialize();
+}
 
 app.Urls.Clear();
 app.Urls.Add("http://0.0.0.0:5233");

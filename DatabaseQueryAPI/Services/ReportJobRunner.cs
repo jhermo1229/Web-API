@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using DatabaseQueryAPI.Services;
+using DatabaseQueryAPI.Model;
 
 namespace DatabaseQueryAPI.Services.Scheduling
 {
@@ -43,6 +44,21 @@ namespace DatabaseQueryAPI.Services.Scheduling
             _logger.LogInformation(
                 "Email SENT | Report=GearReport | Plant={Plant} | To={Email} | SentAt={Time}",
                 plantName, toEmail, DateTime.Now);
+        }
+
+        /// <summary>
+        /// Runs a scheduler job immediately for all recipients.
+        /// Current version assumes all jobs are Gear Reports.
+        /// </summary>
+        public async Task RunJobNowAsync(SchedulerDbJob job)
+        {
+            if (job == null)
+                throw new ArgumentNullException(nameof(job));
+
+            foreach (var recipient in job.Recipients)
+            {
+                await RunGearReportEmailAsync(job.PlantId, recipient);
+            }
         }
     }
 }

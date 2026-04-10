@@ -73,9 +73,15 @@ ORDER BY CUSTOMER;";
 
             var rows = (result as IEnumerable<IDictionary<string, object>>)
                        ?? throw new Exception("ExecuteQueryAsync did not return a dictionary rowset.");
+            
+            var plantName = plantId == 1 ? "KITCHENER"
+               : plantId == 2 ? "GATINEAU"
+               : $"PLANT_{plantId}";
 
-            var sheetName = plantId == 1 ? "KITCHENER" : plantId == 2 ? "GATINEAU" : $"PLANT_{plantId}";
-            var fileName = $"GearReport_{sheetName}_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+            var sheetName = "Shell/Liner Only";
+
+            var fileName = $"GearReport_{plantName}_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+
 
             var excelBytes = _excel.BuildGearReportExcel(rows, sheetName);
             return (excelBytes, fileName, sheetName);
