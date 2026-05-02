@@ -8,6 +8,7 @@
         public string Time { get; set; }
         public int PlantId { get; set; }
         public List<string> ToEmails { get; set; } = new();
+        public string ToEmail { get; set; } = "";
 
         // NEW (optional)
         public string ReportType { get; set; } = "GearReport"; // "GearReport" or "WorkorderCount"

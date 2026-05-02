@@ -78,7 +78,7 @@ ORDER BY CUSTOMER;";
                : plantId == 2 ? "GATINEAU"
                : $"PLANT_{plantId}";
 
-            var sheetName = "Shell/Liner Only";
+            var sheetName = "Shell and Liner Only";
 
             var fileName = $"GearReport_{plantName}_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
 

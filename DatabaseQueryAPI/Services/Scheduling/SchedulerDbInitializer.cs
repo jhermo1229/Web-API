@@ -24,6 +24,7 @@ namespace DatabaseQueryAPI.Services.Scheduling
             _connectionString = $"Data Source={dbPath}";
 
             _seedJobs = jobOptions.Value ?? new List<ReportJobOptions>();
+            _logger.LogInformation("SQLite DB Path: {Path}", dbPath);
         }
 
         public void Initialize()
@@ -126,14 +127,24 @@ VALUES ($reportJobId, $dayOfWeek);";
                     insertDay.ExecuteNonQuery();
                 }
 
+                var seedEmails = new List<string>();
+
                 if (!string.IsNullOrWhiteSpace(job.ToEmail))
+                    seedEmails.Add(job.ToEmail.Trim());
+
+                if (job.ToEmails != null && job.ToEmails.Count > 0)
+                    seedEmails.AddRange(job.ToEmails
+                        .Where(e => !string.IsNullOrWhiteSpace(e))
+                        .Select(e => e.Trim()));
+
+                foreach (var email in seedEmails.Distinct(StringComparer.OrdinalIgnoreCase))
                 {
                     using var insertRecipient = connection.CreateCommand();
                     insertRecipient.CommandText = @"
 INSERT INTO ReportJobRecipients (ReportJobId, Email, IsActive, CreatedAt)
 VALUES ($reportJobId, $email, 1, $createdAt);";
                     insertRecipient.Parameters.AddWithValue("$reportJobId", reportJobId);
-                    insertRecipient.Parameters.AddWithValue("$email", job.ToEmail.Trim());
+                    insertRecipient.Parameters.AddWithValue("$email", email);
                     insertRecipient.Parameters.AddWithValue("$createdAt", now);
                     insertRecipient.ExecuteNonQuery();
                 }

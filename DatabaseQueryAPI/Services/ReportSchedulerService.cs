@@ -70,10 +70,7 @@ namespace DatabaseQueryAPI.Services.Scheduling
                                 using var scope = _scopeFactory.CreateScope();
                                 var runner = scope.ServiceProvider.GetRequiredService<ReportJobRunner>();
 
-                                foreach (var recipient in job.Recipients)
-                                {
-                                    await runner.RunGearReportEmailAsync(job.PlantId, recipient);
-                                }
+                                await runner.RunJobNowAsync(job);
 
                                 _logger.LogInformation("Job succeeded: {Job}", job.Name);
                                 _statusService.SetJobSucceeded(job.Name);

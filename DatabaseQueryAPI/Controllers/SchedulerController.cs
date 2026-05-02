@@ -39,15 +39,17 @@ namespace DatabaseQueryAPI.Controllers
         public ActionResult<List<SchedulerJobDto>> GetJobs()
         {
             var jobs = _jobStore.GetAllJobs()
-                .Select(j => new SchedulerJobDto
-                {
-                    Name = j.Name,
-                    Enabled = j.Enabled,
-                    TimeOfDay = j.TimeOfDay,
-                    PlantId = j.PlantId,
-                    DaysOfWeek = j.DaysOfWeek,
-                    Recipients = j.Recipients
-                })
+.Select(j => new SchedulerJobDto
+{
+    Name = j.Name,
+    Enabled = j.Enabled,
+    TimeOfDay = j.TimeOfDay,
+    PlantId = j.PlantId,
+    ReportType = j.ReportType,
+    DaysBack = j.DaysBack,
+    DaysOfWeek = j.DaysOfWeek,
+    Recipients = j.Recipients
+})
                 .ToList();
 
             return Ok(jobs);
@@ -67,6 +69,8 @@ namespace DatabaseQueryAPI.Controllers
                 Enabled = job.Enabled,
                 TimeOfDay = job.TimeOfDay,
                 PlantId = job.PlantId,
+                ReportType = job.ReportType,
+                DaysBack = job.DaysBack,
                 DaysOfWeek = job.DaysOfWeek,
                 Recipients = job.Recipients
             });
@@ -137,6 +141,48 @@ namespace DatabaseQueryAPI.Controllers
                 _statusService.SetJobFailed(job.Name, ex.Message);
                 return StatusCode(500, new { message = $"Job '{job.Name}' failed.", error = ex.Message });
             }
+        }
+
+        [HttpPut("jobs/{name}/time")]
+        public IActionResult UpdateTime(string name, [FromBody] UpdateJobTimeRequest request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var success = _jobStore.UpdateTime(name, request.TimeOfDay, out var message);
+
+            if (!success)
+                return NotFound(new { message });
+
+            return Ok(new { message });
+        }
+
+        [HttpPut("jobs/{name}/days")]
+        public IActionResult UpdateDays(string name, [FromBody] UpdateJobDaysRequest request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var success = _jobStore.UpdateDays(name, request.DaysOfWeek, out var message);
+
+            if (!success)
+                return BadRequest(new { message });
+
+            return Ok(new { message });
+        }
+
+        [HttpPut("jobs/{name}/rename")]
+        public IActionResult RenameJob(string name, [FromBody] RenameJobRequest request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var success = _jobStore.RenameJob(name, request.NewName, out var message);
+
+            if (!success)
+                return BadRequest(new { message });
+
+            return Ok(new { message });
         }
     }
 }

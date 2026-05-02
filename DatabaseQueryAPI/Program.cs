@@ -12,6 +12,10 @@ builder.Services.AddScoped<DatabaseService>();  // Register DatabaseService for 
 builder.Services.AddScoped<EmailService>();
 builder.Services.AddSingleton<ExcelReportService>();
 builder.Services.AddScoped<GearReportService>();
+builder.Services.AddScoped<QaDailyReportService>();
+builder.Services.AddScoped<WorkorderCountReportService>();
+builder.Services.AddScoped<ExpiryReportService>();
+builder.Services.AddScoped<DailyItemRepeatService>();
 builder.Services.AddHostedService<ReportSchedulerService>();
 builder.Services.Configure<List<ReportJobOptions>>(builder.Configuration.GetSection("ReportJobs"));
 builder.Services.AddScoped<ReportJobRunner>();
