@@ -1,21 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-
-namespace DatabaseQueryAPI.Services
+﻿namespace DatabaseQueryAPI.Services
 {
-    public class QaDailyReportService
+    public class RepairDailyReportService
     {
         private readonly DatabaseService _databaseService;
         private readonly ExcelReportService _excel;
         private readonly EmailService _email;
-        private readonly ILogger<QaDailyReportService> _logger;
+        private readonly ILogger<RepairDailyReportService> _logger;
 
-        public QaDailyReportService(
+        public RepairDailyReportService(
             DatabaseService databaseService,
             ExcelReportService excel,
             EmailService email,
-            ILogger<QaDailyReportService> logger)
+            ILogger<RepairDailyReportService> logger)
         {
             _databaseService = databaseService;
             _excel = excel;
@@ -31,7 +27,6 @@ namespace DatabaseQueryAPI.Services
             var sql = @"
 SELECT
     CONCAT(f.firstname, ' ', f.lastname) AS FIREFIGHTER_NAME,
-    w.date_added AS QA_DATE_ADDED,
     c.customer AS CUSTOMER,
     CASE
     WHEN TRIM(IFNULL(u.firstname, '')) <> ''
@@ -45,8 +40,7 @@ SELECT
         THEN u.lastname
 
     ELSE 'Unknown User'
-END AS QA_USER_NAME,
-    w.userid_f AS USER_ID
+END AS QA_USER_NAME
 FROM workorder_history w
 JOIN workorder wo ON w.workorderid_f = wo.workorderid_p
 JOIN firefighter f ON wo.firefighterid_f = f.firefighterid_p
@@ -66,7 +60,7 @@ ORDER BY
 
             var parameters = new Dictionary<string, object>
             {
-                ["Status"] = "Completed",
+                ["Status"] = "Pending QA",
                 ["StartDate"] = startDate,
                 ["EndDate"] = endDate,
                 ["PlantId"] = plantId
@@ -77,13 +71,15 @@ ORDER BY
             var rows = (result as IEnumerable<IDictionary<string, object>>)
                        ?? throw new Exception("ExecuteQueryAsync did not return a dictionary rowset.");
 
-            var sheetName = plantId == 1 ? "KITCHENER_QA"
-                          : plantId == 2 ? "GATINEAU_QA"
-                          : $"PLANT_{plantId}_QA";
+            var plantName = plantId == 1 ? "KITCHENER"
+                          : plantId == 2 ? "GATINEAU"
+                          : $"PLANT_{plantId}";
 
-            var fileName = $"QA_ByUser_{sheetName}_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+            var sheetName = $"{plantName}_REPAIR";
+            var fileName = $"Repair_Daily_{plantName}_{startDate:yyyyMMdd}.xlsx";
 
             var excelBytes = _excel.BuildDailyQaByUserOutlineExcel(rows, sheetName);
+
             return (excelBytes, fileName, sheetName);
         }
 
@@ -93,13 +89,16 @@ ORDER BY
 
             await _email.SendEmailWithAttachmentAsync(
                 toEmails: toEmails,
-                subject: $"QA Count By User (Daily) - {sheetName}",
-                body: $"Attached is the QA-by-user report for {startDate:yyyy-MM-dd}.",
+                subject: $"Repair Daily Report - {sheetName} - {startDate:yyyy-MM-dd}",
+                body: $"Attached is the repair daily report for {startDate:yyyy-MM-dd}.",
                 attachmentBytes: bytes,
                 attachmentFileName: fileName
             );
 
-            _logger.LogInformation("QaDailyReportService completed | PlantId={PlantId} | File={FileName}", plantId, fileName);
+            _logger.LogInformation(
+                "RepairDailyReportService completed | PlantId={PlantId} | File={FileName}",
+                plantId,
+                fileName);
         }
     }
 }

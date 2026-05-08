@@ -11,6 +11,8 @@ namespace DatabaseQueryAPI.Services.Scheduling
         private readonly WorkorderCountReportService _workorderCountReportService;
         private readonly ExpiryReportService _expiryReportService;
         private readonly DailyItemRepeatService _dailyItemRepeatService;
+        private readonly RepairDailyReportService _repairDailyReportService;
+        private readonly Over10CustomerReportService _over10CustomerReportService;
         private readonly ILogger<ReportJobRunner> _logger;
 
         public ReportJobRunner(
@@ -19,6 +21,8 @@ namespace DatabaseQueryAPI.Services.Scheduling
             WorkorderCountReportService workorderCountReportService,
             ExpiryReportService expiryReportService,
             DailyItemRepeatService dailyItemRepeatService,
+            RepairDailyReportService repairDailyReportService,
+            Over10CustomerReportService over10CustomerReportService,
             ILogger<ReportJobRunner> logger)
         {
             _gearReportService = gearReportService;
@@ -26,6 +30,8 @@ namespace DatabaseQueryAPI.Services.Scheduling
             _workorderCountReportService = workorderCountReportService;
             _expiryReportService = expiryReportService;
             _dailyItemRepeatService = dailyItemRepeatService;
+            _repairDailyReportService = repairDailyReportService;
+            _over10CustomerReportService = over10CustomerReportService;
             _logger = logger;
         }
 
@@ -57,6 +63,14 @@ namespace DatabaseQueryAPI.Services.Scheduling
 
                 case "ItemRepeat":
                     await RunItemRepeatAsync(job);
+                    break;
+
+                case "RepairDaily":
+                    await RunRepairDailyAsync(job);
+                    break;
+
+                case "Over10Customer":
+                    await RunOver10CustomerAsync(job);
                     break;
 
                 default:
@@ -155,6 +169,45 @@ namespace DatabaseQueryAPI.Services.Scheduling
 
             await _dailyItemRepeatService.SendIfDataExistsAsync(
                 plantId: job.PlantId,
+                toEmails: job.Recipients
+            );
+        }
+
+        private async Task RunRepairDailyAsync(SchedulerDbJob job)
+        {
+            var reportDate = GetPreviousBusinessDay(DateTime.Today);
+            var startDate = reportDate.Date;
+            var endDate = startDate.AddDays(1);
+
+            _logger.LogInformation(
+                "Starting Repair Daily job | Job={Job} | PlantId={PlantId} | Date={Date}",
+                job.Name,
+                job.PlantId,
+                startDate.ToString("yyyy-MM-dd"));
+
+            await _repairDailyReportService.SendEmailAsync(
+                plantId: job.PlantId,
+                startDate: startDate,
+                endDate: endDate,
+                toEmails: job.Recipients
+            );
+        }
+
+        private async Task RunOver10CustomerAsync(SchedulerDbJob job)
+        {
+            const string receiveStatus = "active";
+
+            if (job.CustomerId == null || job.CustomerId <= 0)
+                throw new InvalidOperationException($"Job '{job.Name}' is missing CustomerId.");
+
+            _logger.LogInformation(
+                "Starting Over10Customer job | Job={Job} | CustomerId={CustomerId}",
+                job.Name,
+                job.CustomerId);
+
+            await _over10CustomerReportService.SendEmailAsync(
+                customerId: job.CustomerId.Value,
+                receiveStatus: receiveStatus,
                 toEmails: job.Recipients
             );
         }

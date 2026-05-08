@@ -11,5 +11,7 @@
         public int DaysBack { get; set; } = 1;
         public List<string> DaysOfWeek { get; set; } = new();
         public List<string> Recipients { get; set; } = new();
+
+        public int? CustomerId { get; set; }
     }
 }

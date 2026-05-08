@@ -41,8 +41,10 @@ SELECT
     j.PlantId,
     j.ReportType,
     j.DaysBack,
+    j.CustomerId,
     d.DayOfWeek,
     r.Email
+
 FROM ReportJobs j
 LEFT JOIN ReportJobDays d ON d.ReportJobId = j.Id
 LEFT JOIN ReportJobRecipients r ON r.ReportJobId = j.Id AND r.IsActive = 1
@@ -65,20 +67,21 @@ ORDER BY j.Name;";
                         TimeOfDay = reader.GetString(3),
                         PlantId = reader.GetInt32(4),
                         ReportType = reader.GetString(5),
-                        DaysBack = reader.GetInt32(6)
+                        DaysBack = reader.GetInt32(6),
+                        CustomerId = reader.IsDBNull(7) ? null : reader.GetInt32(7)
                     };
-                }
-
-                if (!reader.IsDBNull(7))
-                {
-                    var day = reader.GetString(7);
-                    if (!jobs[id].DaysOfWeek.Contains(day, StringComparer.OrdinalIgnoreCase))
-                        jobs[id].DaysOfWeek.Add(day);
                 }
 
                 if (!reader.IsDBNull(8))
                 {
-                    var email = reader.GetString(8);
+                    var day = reader.GetString(8);
+                    if (!jobs[id].DaysOfWeek.Contains(day, StringComparer.OrdinalIgnoreCase))
+                        jobs[id].DaysOfWeek.Add(day);
+                }
+
+                if (!reader.IsDBNull(9))
+                {
+                    var email = reader.GetString(9);
                     if (!jobs[id].Recipients.Contains(email, StringComparer.OrdinalIgnoreCase))
                         jobs[id].Recipients.Add(email);
                 }

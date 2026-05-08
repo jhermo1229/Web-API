@@ -47,6 +47,7 @@ namespace DatabaseQueryAPI.Controllers
     PlantId = j.PlantId,
     ReportType = j.ReportType,
     DaysBack = j.DaysBack,
+    CustomerId = j.CustomerId,
     DaysOfWeek = j.DaysOfWeek,
     Recipients = j.Recipients
 })

@@ -160,9 +160,9 @@ namespace DatabaseQueryAPI.Services
 
             // Headers
             ws.Cell(1, 1).Value = "USER";
-            ws.Cell(1, 2).Value = "TOTAL QA";
+            ws.Cell(1, 2).Value = "TOTAL";
             ws.Cell(1, 3).Value = "FIREFIGHTER";
-            ws.Cell(1, 4).Value = "QA COMPLETED AT";
+            ws.Cell(1, 4).Value = "COMPLETED AT";
             ws.Cell(1, 5).Value = "CUSTOMER";
 
             var header = ws.Range(1, 1, 1, 5);

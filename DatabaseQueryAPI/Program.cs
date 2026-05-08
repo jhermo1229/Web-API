@@ -22,6 +22,8 @@ builder.Services.AddScoped<ReportJobRunner>();
 builder.Services.AddSingleton<SchedulerDbInitializer>();
 builder.Services.AddSingleton<SchedulerJobStore>();
 builder.Services.AddSingleton<SchedulerStatusService>();
+builder.Services.AddScoped<RepairDailyReportService>();
+builder.Services.AddScoped<Over10CustomerReportService>();
 
 // Add logging services
 builder.Services.AddLogging(config =>
